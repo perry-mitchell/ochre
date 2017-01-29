@@ -36,9 +36,7 @@ if (argv.a === true) {
     }
     Ochre
         .loadConfig(configFilename, outputFile)
-        .then(function(config) {
-            console.log("Done", config);
-        })
+        .then(Ochre.package)
         .catch(function(err) {
             setTimeout(function() {
                 throw err;

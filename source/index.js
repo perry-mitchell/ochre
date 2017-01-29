@@ -2,12 +2,14 @@ const _fs = require("fs");
 const pify = require("pify");
 
 const config = require("./config.js");
+const packaging = require("./packaging.js");
 
 const fs = pify(_fs);
 
 module.exports = {
 
     config,
+    packaging,
 
     loadConfig: function(filename, output) {
         return fs
@@ -20,6 +22,10 @@ module.exports = {
                 configData.output = output;
                 return configData;
             });
+    },
+
+    package: function(conf) {
+        return packaging.packageUsingConfig(conf);
     }
 
 };
