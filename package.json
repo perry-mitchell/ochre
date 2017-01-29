@@ -1,0 +1,39 @@
+{
+  "name": "ochre",
+  "version": "0.1.0",
+  "description": "Ochre resource packager and backup utility",
+  "main": "source/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "ochre": "cli.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/perry-mitchell/ochre.git"
+  },
+  "keywords": [
+    "ochre",
+    "backup",
+    "package",
+    "compress",
+    "archive",
+    "store",
+    "pack"
+  ],
+  "author": "Perry Mitchell <perry@perrymitchell.net>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/perry-mitchell/ochre/issues"
+  },
+  "homepage": "https://github.com/perry-mitchell/ochre#readme",
+  "dependencies": {
+    "glob": "~7.1.1",
+    "minimist": "~1.2.0",
+    "pify": "^2.3.0"
+  },
+  "devDependencies": {
+    "eslint": "^3.14.1"
+  }
+}
