@@ -1,3 +1,4 @@
+const path = require("path");
 const _glob = require("glob");
 const pify = require("pify");
 
@@ -23,10 +24,19 @@ const lib = module.exports = {
     },
 
     findFilesInResource: function(data) {
-        let patterns = Array.isArray(data.pattern) ? data.pattern : [data.pattern];
-        return Promise
-            .all(patterns.map(pattern => glob(pattern)))
-            .then(items => flattenArrayOfArrays(items));
+        return glob(data.pattern)
+            .then(function(files) {
+                return files.map(function(filename) {
+                    let outputFilename = filename;
+                    if (data.toRelative) {
+                        outputFilename = path.relative(data.toRelative, outputFilename);
+                    }
+                    return {
+                        filename,
+                        outputFilename
+                    };
+                });
+            });
     },
 
     loadConfigFileData: function(data) {

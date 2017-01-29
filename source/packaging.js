@@ -5,11 +5,11 @@ const marking = require("./marking.js");
 
 const lib = module.exports = {
 
-    addFile: function(harness, filename) {
-        let size = lib.getFileSize(filename);
+    addFile: function(harness, fileData) {
+        let size = lib.getFileSize(fileData.filename);
         return new Promise(function(resolve, reject) {
-            marking.addFile(harness, filename, size);
-            let rs = fs.createReadStream(filename);
+            marking.addFile(harness, fileData.outputFilename, size);
+            let rs = fs.createReadStream(fileData.filename);
             rs.pipe(harness.instream, { end: false });
             rs.on("end", resolve);
             rs.on("error", reject);
@@ -26,7 +26,7 @@ const lib = module.exports = {
 
     getFileSize: function(filename) {
         const stats = fs.statSync(filename);
-        return stats["size"];
+        return stats.size;
     },
 
     packageUsingConfig: function(config) {
@@ -38,15 +38,12 @@ const lib = module.exports = {
         let work = Promise.resolve(),
             filesLeft = [...config.resources.files];
         while (filesLeft.length) {
-            let nextFilename = filesLeft.shift();
+            let nextFile = filesLeft.shift();
             work = work
                 .then(() => {
-                    console.log(`Adding: ${nextFilename}`);
+                    console.log(`Adding: ${nextFile.filename} -> ${nextFile.outputFilename}`);
                 })
-                .then(() => lib.addFile(harness, nextFilename))
-                .then(() => {
-                    console.log(`Added:  ${nextFilename}`);
-                });
+                .then(() => lib.addFile(harness, nextFile));
         }
         return work
             .then(function() {
