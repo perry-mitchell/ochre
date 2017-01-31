@@ -1,31 +1,35 @@
-const _fs = require("fs");
+const fs = require("fs");
+
 const pify = require("pify");
 
-const config = require("./config.js");
-const packaging = require("./packaging.js");
+const {
+    collectFiles,
+    createHarness,
+    disposeHarness
+    packFiles,
+    writeArchiveHeader
+} = require("./creation.js");
 
-const fs = pify(_fs);
+const readFile = pify(fs.readFile);
+
+function createArchive(targetFile, configurationPath) {
+    return loadConfiguration(configurationPath)
+        .then(function(configuration) {
+            let harness = createHarness(targetFile, configuration);
+            writeArchiveHeader(harness);
+            return harness;
+        })
+        .then(harness => collectFiles(harness).then(() => harness))
+        .then(harness => packFiles(harness).then(() => harness))
+        .then(harness => disposeHarness(harness));
+}
+
+function loadConfiguration(filename) {
+    return readFile(filename, "utf8").then(JSON.parse);
+}
 
 module.exports = {
 
-    config,
-    packaging,
-
-    loadConfig: function(filename, output) {
-        return fs
-            .readFile(filename, "utf8")
-            .then(function(data) {
-                let configData = JSON.parse(data);
-                return config.loadConfigFileData(configData);
-            })
-            .then(function(configData) {
-                configData.output = output;
-                return configData;
-            });
-    },
-
-    package: function(conf) {
-        return packaging.packageUsingConfig(conf);
-    }
+    createArchive
 
 };
