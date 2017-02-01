@@ -26,6 +26,19 @@ To get help using the command line tool, once installed, simply enter `ochre --h
 
 Ochre supports 2 modes of operation: **archiving** and **extraction**.
 
+```bash
+# Archive some files defined in a configuration file
+ochre config.ochre.json -a --output=myArchive.ochre
+
+# Extract files from an archive
+ochre myArchive.ochre -e
+
+# Show help and other arguments
+ochre --help
+```
+
+Ochre makes use of a configuration file to perform archiving of resources.
+
 ## Disclaimer
 Ochre comes with **no guarantee** for data safety or availability. Even when it becomes stable, it is at your own peril if you choose to use it to store sensitive data.
 
