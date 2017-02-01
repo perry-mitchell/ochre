@@ -4,7 +4,9 @@ const fs = require("fs");
 const _glob = require("glob");
 const pify = require("pify");
 const lpstream = require("length-prefixed-stream");
+const Logger = require("./Logger.js");
 
+const logger = Logger.getSharedLogger();
 const glob = pify(_glob);
 const lstat = pify(fs.lstat);
 
@@ -63,18 +65,19 @@ function createHarness(outputFile, configuration) {
 
 function disposeHarness(harness) {
     harness.writeStream.end();
+    logger.setStatus("final", "Waiting");
 }
 
 function packFile(harness, fileInfo) {
     return new Promise(function(resolve, reject) {
-        // @todo notify
+        logger.setStatus("pack", fileInfo.filename);
         let packet = {
             filename: fileInfo.filename,
             size: fileInfo.size,
             type: "file"
         };
         harness.writeStream.write(packetToBuffer(packet));
-        let fileStream = fs.createReadStream(itemPath);
+        let fileStream = fs.createReadStream(fileInfo.filename);
         fileStream.on("data", function(chunk) {
             harness.writeStream.write(chunk);
         });
@@ -98,16 +101,17 @@ function packetToBuffer(obj) {
 }
 
 function writeArchiveHeader(harness) {
-    harness.writeStream.write(packetToBuffer({
-        ...harness.configuration.config,
-        format: OCHRE_FILE_FORMAT
-    }));
+    harness.writeStream.write(packetToBuffer(Object.assign(
+        {},
+        harness.configuration.config,
+        { format: OCHRE_FILE_FORMAT }
+    )));
 }
 
 module.exports = {
     collectFiles,
     createHarness,
-    disposeHarness
+    disposeHarness,
     packFiles,
     writeArchiveHeader
 };

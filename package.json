@@ -2,22 +2,23 @@
   "name": "ochre",
   "version": "0.1.0",
   "description": "",
-  "main": "source/index.js",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
+    "chalk": "~1.1.3",
     "dev-null": "~0.1.1",
     "glob": "~7.1.1",
     "length-prefixed-stream": "~1.5.1",
+    "log-update": "~1.0.2",
     "minimist": "~1.2.0",
     "mkdirp": "~0.5.1",
     "pify": "~2.3.0"
   },
   "devDependencies": {
-    "eslint": "^3.14.1",
     "rimraf": "^2.5.4"
   }
 }

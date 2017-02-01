@@ -8,9 +8,7 @@ const Ochre = require("./source/index.js");
 function showHelp() {
     console.log(`
 Ochre
-
 Usage: ochre <config|package> [options]
-
     -h, --help              Show this help screen
     -a                      Create an archive from a configuration (.ochre)
     -e                      Extract a package
@@ -35,13 +33,20 @@ if (argv.a === true) {
         throw new Error("No output filename specified");
     }
     Ochre
-        .loadConfig(configFilename, outputFile)
-        .then(Ochre.package)
+        .createArchive(outputFile, configFilename)
         .catch(function(err) {
             setTimeout(function() {
                 throw err;
             }, 0);
         });
+    // Ochre
+    //     .loadConfig(configFilename, outputFile)
+    //     .then(Ochre.package)
+    //     .catch(function(err) {
+    //         setTimeout(function() {
+    //             throw err;
+    //         }, 0);
+    //     });
 } else {
     showHelp();
     throw new Error("I have no idea what to do here.");

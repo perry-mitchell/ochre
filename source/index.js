@@ -1,11 +1,14 @@
 const fs = require("fs");
 
 const pify = require("pify");
+const Logger = require("./Logger.js");
+
+const logger = Logger.getSharedLogger();
 
 const {
     collectFiles,
     createHarness,
-    disposeHarness
+    disposeHarness,
     packFiles,
     writeArchiveHeader
 } = require("./creation.js");
@@ -13,6 +16,7 @@ const {
 const readFile = pify(fs.readFile);
 
 function createArchive(targetFile, configurationPath) {
+    logger.start();
     return loadConfiguration(configurationPath)
         .then(function(configuration) {
             let harness = createHarness(targetFile, configuration);
@@ -21,7 +25,10 @@ function createArchive(targetFile, configurationPath) {
         })
         .then(harness => collectFiles(harness).then(() => harness))
         .then(harness => packFiles(harness).then(() => harness))
-        .then(harness => disposeHarness(harness));
+        .then(harness => disposeHarness(harness))
+        .then(function() {
+            logger.stop();
+        });
 }
 
 function loadConfiguration(filename) {
