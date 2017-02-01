@@ -3,6 +3,7 @@ const fs = require("fs");
 
 const _glob = require("glob");
 const pify = require("pify");
+const through2 = require("through2");
 const lpstream = require("length-prefixed-stream");
 const Logger = require("./Logger.js");
 
@@ -68,23 +69,29 @@ function disposeHarness(harness) {
     logger.setStatus("final", "Waiting");
 }
 
+function handleFileChunk(harness, chunk, encoding, callback) {
+    (new Promise(function(resolve) {
+        harness.writeStream.write(chunk, undefined, resolve);
+    })).then(
+        () => callback(),
+        callback
+    );
+}
+
 function packFile(harness, fileInfo) {
+    logger.setStatus("pack", fileInfo.filename);
+    let packet = {
+        filename: fileInfo.filename,
+        size: fileInfo.size,
+        type: "file"
+    };
+    harness.writeStream.write(packetToBuffer(packet));
+    harness.currentFileStream = fs.createReadStream(fileInfo.filename);
     return new Promise(function(resolve, reject) {
-        logger.setStatus("pack", fileInfo.filename);
-        let packet = {
-            filename: fileInfo.filename,
-            size: fileInfo.size,
-            type: "file"
-        };
-        harness.writeStream.write(packetToBuffer(packet));
-        let fileStream = fs.createReadStream(fileInfo.filename);
-        fileStream.on("data", function(chunk) {
-            harness.writeStream.write(chunk);
-        });
-        fileStream.on("end", function() {
-            resolve();
-        });
-        fileStream.on("error", reject);
+        harness.currentFileStream
+            .pipe(through2((chunk, encoding, callback) => handleFileChunk(harness, chunk, encoding, callback)))
+            .on("finish", resolve)
+            .on("error", reject);
     });
 }
 
