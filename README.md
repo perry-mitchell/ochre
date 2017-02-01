@@ -37,7 +37,7 @@ ochre myArchive.ochre -e
 ochre --help
 ```
 
-Ochre makes use of a configuration file to perform archiving of resources.
+Ochre makes use of a [configuration file](CONFIGURATION.md) to perform archiving of resources.
 
 ## Disclaimer
 Ochre comes with **no guarantee** for data safety or availability. Even when it becomes stable, it is at your own peril if you choose to use it to store sensitive data.
