@@ -46,7 +46,7 @@
     "accessor-pairs": [2,{"setWithoutGet":true}],
     "block-scoped-var": 2,
     "complexity": [1,6],
-    "consistent-return": 2,
+    "consistent-return": 0,
     "curly": [2,"all"],
     "default-case": 2,
     "dot-notation": 1,

@@ -7,11 +7,15 @@ const logger = Logger.getSharedLogger();
 
 const {
     collectFiles,
-    createHarness,
+    createHarness: createArchivalHarness,
     disposeHarness,
     packFiles,
     writeArchiveHeader
 } = require("./creation.js");
+const {
+    createHarness: createExtractionHarness,
+    parseArchive
+} = require("./extraction.js");
 
 const readFile = pify(fs.readFile);
 
@@ -19,7 +23,7 @@ function createArchive(targetFile, configurationPath) {
     logger.start();
     return loadConfiguration(configurationPath)
         .then(function(configuration) {
-            let harness = createHarness(targetFile, configuration);
+            let harness = createArchivalHarness(targetFile, configuration);
             writeArchiveHeader(harness);
             return harness;
         })
@@ -31,12 +35,22 @@ function createArchive(targetFile, configurationPath) {
         });
 }
 
+function extractArchive(archiveFilename, dry = false, outputDir = false) {
+    logger.start();
+    let harness = createExtractionHarness(archiveFilename, dry, outputDir);
+    return parseArchive(harness)
+        .then(function() {
+            logger.stop();
+        });
+}
+
 function loadConfiguration(filename) {
     return readFile(filename, "utf8").then(JSON.parse);
 }
 
 module.exports = {
 
-    createArchive
+    createArchive,
+    extractArchive
 
 };

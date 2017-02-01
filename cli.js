@@ -39,14 +39,20 @@ if (argv.a === true) {
                 throw err;
             }, 0);
         });
-    // Ochre
-    //     .loadConfig(configFilename, outputFile)
-    //     .then(Ochre.package)
-    //     .catch(function(err) {
-    //         setTimeout(function() {
-    //             throw err;
-    //         }, 0);
-    //     });
+} else if (argv.e === true) {
+    let archiveFilename = argv._[0],
+        dry = argv.d === true || argv["dry-run"] === true,
+        outputDir = argv.output ? path.resolve(path.relative(process.cwd(), argv.output)) : false;
+    if (!archiveFilename) {
+        throw new Error("No archive filename specified.");
+    }
+    Ochre
+        .extractArchive(archiveFilename, dry, outputDir)
+        .catch(function(err) {
+            setTimeout(function() {
+                throw err;
+            }, 0);
+        });
 } else {
     showHelp();
     throw new Error("I have no idea what to do here.");
