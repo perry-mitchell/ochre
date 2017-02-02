@@ -1,7 +1,7 @@
 {
   "name": "ochre",
   "version": "0.1.0",
-  "description": "",
+  "description": "Resource archival, transfer and extraction utility",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -9,7 +9,25 @@
   "bin": {
     "ochre": "./cli.js"
   },
-  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/perry-mitchell/ochre.git"
+  },
+  "bugs": {
+    "url": "https://github.com/perry-mitchell/ochre/issues"
+  },
+  "keywords": [
+    "backup",
+    "archive",
+    "extract",
+    "compress",
+    "store",
+    "deploy",
+    "package",
+    "pack"
+  ],
+  "homepage": "https://github.com/perry-mitchell/ochre#readme",
+  "author": "Perry Mitchell <perry@perrymitchell.net>",
   "license": "MIT",
   "dependencies": {
     "chalk": "~1.1.3",
