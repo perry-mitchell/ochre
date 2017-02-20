@@ -1,31 +1,26 @@
 const zlib = require("zlib");
 const fs = require("fs");
 
-const _glob = require("glob");
 const pify = require("pify");
 const through2 = require("through2");
 const lpstream = require("length-prefixed-stream");
 const Logger = require("./Logger.js");
 
 const logger = Logger.getSharedLogger();
-const glob = pify(_glob);
 const lstat = pify(fs.lstat);
 
 const OCHRE_FILE_FORMAT = "ochre.rev1";
 
 function collectFiles(harness) {
     return Promise
-        .all(harness.configuration.resources.map(resource => {
-            return (resource.type === "files") ?
-                glob(resource.pattern) :
-                [];
-        }))
+        .resolve(harness.state.files)
         .then(function(items) {
             let files = [];
             items.forEach(function(item) {
-                files = [...files, ...item];
+                files = [...files, item];
             });
             return Promise.all(files.map(function(filename) {
+                // console.log("STAT", filename);
                 return lstat(filename).then(function(stat) {
                     if (stat.isFile()) {
                         harness.files.push({
@@ -47,14 +42,14 @@ function collectFiles(harness) {
         });
 }
 
-function createHarness(outputFile, configuration) {
+function createHarness(outputFile, state) {
     let outStream = fs.createWriteStream(outputFile),
         zipStream = zlib.createGzip(),
         writeStream = lpstream.encode();
     zipStream.pipe(outStream);
     writeStream.pipe(zipStream);
     return {
-        configuration,
+        state,
         outStream,
         zipStream,
         writeStream,
@@ -110,8 +105,10 @@ function packetToBuffer(obj) {
 function writeArchiveHeader(harness) {
     harness.writeStream.write(packetToBuffer(Object.assign(
         {},
-        harness.configuration.config,
-        { format: OCHRE_FILE_FORMAT }
+        {
+            format: OCHRE_FILE_FORMAT,
+            directories: harness.directories
+        }
     )));
 }
 

@@ -1,6 +1,3 @@
-const fs = require("fs");
-
-const pify = require("pify");
 const Logger = require("./Logger.js");
 
 const logger = Logger.getSharedLogger();
@@ -17,13 +14,11 @@ const {
     parseArchive
 } = require("./extraction.js");
 
-const readFile = pify(fs.readFile);
-
-function createArchive(targetFile, configurationPath) {
+function createArchive(targetFile, state) {
     logger.start();
-    return loadConfiguration(configurationPath)
-        .then(function(configuration) {
-            let harness = createArchivalHarness(targetFile, configuration);
+    return Promise.resolve()
+        .then(function() {
+            let harness = createArchivalHarness(targetFile, normaliseState(state));
             writeArchiveHeader(harness);
             return harness;
         })
@@ -35,6 +30,13 @@ function createArchive(targetFile, configurationPath) {
         });
 }
 
+function createInitialState() {
+    return {
+        type: "ochre",
+        files: []
+    };
+}
+
 function extractArchive(archiveFilename, dry = false, outputDir = false) {
     logger.start();
     let harness = createExtractionHarness(archiveFilename, dry, outputDir);
@@ -44,13 +46,20 @@ function extractArchive(archiveFilename, dry = false, outputDir = false) {
         });
 }
 
-function loadConfiguration(filename) {
-    return readFile(filename, "utf8").then(JSON.parse);
+function normaliseState(state) {
+    state.files = state.files || [];
+    return state;
 }
+
+// function loadConfiguration(filename) {
+//     return readFile(filename, "utf8").then(JSON.parse);
+// }
 
 module.exports = {
 
     createArchive,
-    extractArchive
+    createInitialState,
+    extractArchive,
+    normaliseState
 
 };
