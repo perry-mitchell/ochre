@@ -1,65 +1,174 @@
 #!/usr/bin/env node
 
+const fs = require("fs");
 const path = require("path");
-const argv = require("minimist")(process.argv.slice(2));
-const pkg = require("./package.json");
+const fileExists = require("exists-file").sync;
+const osHomedir = require("os-homedir");
+const chalk = require("chalk");
+const ini = require("ini");
+const glob = require("glob");
 
+const argv = require("minimist")(process.argv.slice(2));
 const Ochre = require("./source/index.js");
 
-function showHelp() {
-    console.log(`
-Ochre
-Usage: ochre <config|package> [options]
-    -h, --help              Show this help screen
-    -a                      Create an archive from a configuration (.ochre)
-    -e                      Extract a package
-    -d, --dry-run           Log but take no permanent action
-    --output                Output destination (filename)
-    -q, --quiet             Quiet (yes to all prompts)
-    -v, --version           Output the version
-    `);
-}
+const RETURN_NO_COMMAND =       2;
+const RETURN_INVALID_COMMAND =  3;
+const RETURN_NO_ARCHIVAL =      4;
+const RETURN_ARCHIVAL_ERROR =   5;
+const RETURN_EXTRACT_ERROR =    6;
 
-if (argv.h === true || argv.help === true) {
-    showHelp();
-    return;
-}
-if (argv.v === true || argv.version === true) {
-    console.log(pkg.version);
+const STATE_PATH = path.resolve(osHomedir(), ".ochre");
+const args = (argv._ || []);
+let command = args[0];
+
+if (!command) {
+    console.log("No command specified");
+    process.exit(RETURN_NO_COMMAND);
     return;
 }
 
-if (argv.a === true) {
-    let configFilename = argv._[0],
-        outputFile = path.resolve(path.relative(process.cwd(), argv.output));
-    if (!configFilename) {
-        throw new Error("No configuration filename specified.");
-    }
-    if (!outputFile) {
-        throw new Error("No output filename specified");
-    }
-    Ochre
-        .createArchive(outputFile, configFilename)
-        .catch(function(err) {
-            setTimeout(function() {
-                throw err;
-            }, 0);
+function addFiles(globStr) {
+    return scrapeFiles(globStr)
+        .then(function(files) {
+            let state = readState() || Ochre.createInitialState();
+            state.files = [...state.files, ...files];
+            writeState(state);
         });
-} else if (argv.e === true) {
-    let archiveFilename = argv._[0],
-        dry = argv.d === true || argv["dry-run"] === true,
-        outputDir = argv.output ? path.resolve(path.relative(process.cwd(), argv.output)) : false;
-    if (!archiveFilename) {
-        throw new Error("No archive filename specified.");
+}
+
+function handleAdd(otherArgs) {
+    let addCommand = otherArgs.shift();
+    switch (addCommand) {
+        case "file":
+            /* falls-through */
+        case "files": {
+            if (otherArgs.length <= 0) {
+                throw new Error("Expected file pattern(s)");
+            }
+            otherArgs.forEach(addFiles);
+            break;
+        }
+
+        default:
+            throw new Error(`Unknown type to add: ${addCommand}`);
     }
-    Ochre
-        .extractArchive(archiveFilename, dry, outputDir)
-        .catch(function(err) {
-            setTimeout(function() {
-                throw err;
-            }, 0);
+}
+
+function outputState() {
+    if (fileExists(STATE_PATH)) {
+        let state = readState();
+        console.log("Archival in progress");
+        if (state.files && state.files.length > 0) {
+            console.log("  Files:");
+            state.files.forEach(function(filename) {
+                console.log(`    ${chalk.green(filename)}`);
+            });
+        }
+        // if (state.file.pending.length > 0) {
+        //     console.log("  Pending:");
+        //     state.file.pending.forEach(function(filename) {
+        //         console.log(`    ${chalk.yellow(filename)}`);
+        //     });
+        // }
+    } else {
+        console.log("No archival in progress - state is empty");
+    }
+}
+
+function readState() {
+    if (fileExists(STATE_PATH)) {
+        let stateData = fs.readFileSync(STATE_PATH, "utf8");
+        return Ochre.normaliseState(ini.parse(stateData));
+    }
+    return null;
+}
+
+function scrapeFiles(globStr) {
+    return new Promise(function(resolve, reject) {
+        glob(globStr, {}, function(err, files) {
+            if (err) {
+                return reject(err);
+            }
+            return resolve(files);
         });
-} else {
-    showHelp();
-    throw new Error("I have no idea what to do here.");
+    });
+}
+
+// function showHelp() {
+//     console.log(`
+// Ochre
+// Usage: ochre <config|package> [options]
+//     -h, --help              Show this help screen
+//     -a                      Create an archive from a configuration (.ochre)
+//     -e                      Extract a package
+//     -d, --dry-run           Log but take no permanent action
+//     --output                Output destination (filename)
+//     -q, --quiet             Quiet (yes to all prompts)
+//     -v, --version           Output the version
+//     `);
+// }
+
+function writeState(state) {
+    fs.writeFileSync(STATE_PATH, ini.stringify(state), "utf8");
+}
+
+switch (command) {
+    case "clear": {
+        if (fileExists(STATE_PATH)) {
+            fs.unlinkSync(STATE_PATH);
+            console.log("Archival state cleared");
+        } else {
+            console.log("No archival in progress");
+        }
+        break;
+    }
+    case "status": {
+        outputState();
+        break;
+    }
+    case "add": {
+        let commands = [...args];
+        commands.shift(); // remove 'add'
+        handleAdd(commands);
+        break;
+    }
+    case "list": {
+        let filename = args[1];
+        if (filename) {
+            Ochre
+                .extractArchive(filename, { dry: true, outputPath: false, list: true })
+                .catch(function(err) {
+                    console.error(err.message);
+                    process.exit(RETURN_EXTRACT_ERROR);
+                });
+        } else {
+            throw new Error("Expected archive file name");
+        }
+        break;
+    }
+    case "pack": {
+        let filename = args[1],
+            state = readState();
+        if (filename) {
+            if (state) {
+                Ochre
+                    .createArchive(filename, state)
+                    .catch(function(err) {
+                        console.error(err.message);
+                        process.exit(RETURN_ARCHIVAL_ERROR);
+                    });
+            } else {
+                console.log("No archival in progress");
+                process.exit(RETURN_NO_ARCHIVAL);
+            }
+        } else {
+            throw new Error("Expected output file name");
+        }
+        break;
+    }
+
+    default:
+        console.log("Invalid command");
+        process.exit(RETURN_INVALID_COMMAND);
+        return;
 }

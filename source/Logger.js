@@ -64,7 +64,7 @@ class Logger {
     stop() {
         clearInterval(this._interval);
         this._interval = null;
-        logUpdate("");
+        logUpdate.clear();
     }
 
     update() {
@@ -84,6 +84,6 @@ Logger.getSharedLogger = function() {
         __sharedLogger = new Logger();
     }
     return __sharedLogger;
-}
+};
 
 module.exports = Logger;
