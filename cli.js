@@ -15,6 +15,7 @@ const RETURN_NO_COMMAND =       2;
 const RETURN_INVALID_COMMAND =  3;
 const RETURN_NO_ARCHIVAL =      4;
 const RETURN_ARCHIVAL_ERROR =   5;
+const RETURN_EXTRACT_ERROR =    6;
 
 const STATE_PATH = path.resolve(osHomedir(), ".ochre");
 const args = (argv._ || []);
@@ -129,6 +130,20 @@ switch (command) {
         let commands = [...args];
         commands.shift(); // remove 'add'
         handleAdd(commands);
+        break;
+    }
+    case "list": {
+        let filename = args[1];
+        if (filename) {
+            Ochre
+                .extractArchive(filename, { dry: true, outputPath: false, list: true })
+                .catch(function(err) {
+                    console.error(err.message);
+                    process.exit(RETURN_EXTRACT_ERROR);
+                });
+        } else {
+            throw new Error("Expected archive file name");
+        }
         break;
     }
     case "pack": {

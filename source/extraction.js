@@ -23,15 +23,17 @@ function createDirectoryForFile(itemPath, harness) {
     return mkdirp(dirPath);
 }
 
-function createHarness(archiveFilename, dry = false, outputPath = false) {
+function createHarness(archiveFilename, { dry, outputPath, list } = { dry: false, outputPath: false, list: false }) {
     let inStream = fs.createReadStream(archiveFilename),
         zipStream = zlib.createGunzip(),
         readStream = lpstream.decode();
     inStream.pipe(zipStream).pipe(readStream);
     return {
+        archiveFilename,
         configuration: null,
         createdDirectories: [],
         dry,
+        list,
         outputPath,
         inStream,
         zipStream,
@@ -90,12 +92,15 @@ function handleChunk(harness, chunk, encoding, callback) {
                                 fs.createWriteStream(harness.currentFile.outPath);
                         })
                         .then(resolve, reject);
-                } else {
-                    throw new Error(`Header type not recognised: ${header.type}`);
                 }
+                throw new Error(`Header type not recognised: ${header.type}`);
             }
             case "file": {
-                logger.setStatus("unpack", harness.currentFile.outPath);
+                if (harness.list) {
+                    console.log("  File:", harness.currentFile.outPath);
+                } else {
+                    logger.setStatus("unpack", harness.currentFile.outPath);
+                }
                 let chunkSize = chunk.length;
                 harness.currentFile.sizeLeft -= chunkSize;
                 harness.currentFile.outStream.write(chunk, undefined, function(err) {
@@ -121,7 +126,11 @@ function handleChunk(harness, chunk, encoding, callback) {
 }
 
 function parseArchive(harness) {
-    logger.setStatus("init", "Preparing to unpack");
+    if (harness.list) {
+        console.log("Extracting from:", harness.archiveFilename);
+    } else {
+        logger.setStatus("init", "Preparing to unpack");
+    }
     return new Promise(function(resolve, reject) {
         harness.readStream
             .pipe(through2((chunk, encoding, callback) => handleChunk(harness, chunk, encoding, callback)))

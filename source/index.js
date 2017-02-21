@@ -37,9 +37,9 @@ function createInitialState() {
     };
 }
 
-function extractArchive(archiveFilename, dry = false, outputDir = false) {
+function extractArchive(archiveFilename, { dry, outputPath, list } = { dry: false, outputPath: false, list: false }) {
     logger.start();
-    let harness = createExtractionHarness(archiveFilename, dry, outputDir);
+    let harness = createExtractionHarness(archiveFilename, { dry, outputPath, list });
     return parseArchive(harness)
         .then(function() {
             logger.stop();
